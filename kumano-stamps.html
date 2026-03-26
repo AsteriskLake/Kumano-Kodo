@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>熊野古道徒步手帐</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+SC:wght@400;500;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0a08;--s1:#161310;--s2:#1f1b17;--s3:#2a2520;
+  --b1:#3a322a;--b2:#4e443c;
+  --t1:#e2d4c0;--t2:#9a8a78;--t3:#5a5048;
+  --red:#c8351a;--redb:#e04828;--redg:rgba(200,53,26,.25);
+  --gold:#b8922e;--goldl:#d4aa50;
+  --green:#4a8c5c;--blue:#4a7ab0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+
+/* HEADER */
+.hdr{padding:30px 20px 22px;text-align:center;background:linear-gradient(180deg,#180e06,var(--bg));border-bottom:1px solid var(--b1)}
+.hdr-sub{font-family:'Cinzel',serif;font-size:10px;letter-spacing:4px;color:var(--gold);margin-bottom:8px}
+.hdr-title{font-family:'Noto Serif SC',serif;font-size:26px;font-weight:700;letter-spacing:6px;margin-bottom:6px}
+.hdr-info{font-size:12px;color:var(--t2);letter-spacing:2px}
+
+/* PROGRESS */
+.prog{background:var(--s1);padding:14px 20px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:14px}
+.prog-lbl{font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;color:var(--t2);white-space:nowrap}
+.prog-track{flex:1;height:3px;background:var(--s3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--redb));border-radius:2px;transition:width .5s ease}
+.prog-num{font-family:'Cinzel',serif;font-size:13px;color:var(--redb);white-space:nowrap}
+.prog-num span{color:var(--t3)}
+
+/* TABS */
+.tabs-w{background:var(--s1);border-bottom:1px solid var(--b1);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs-w::-webkit-scrollbar{display:none}
+.tabs{display:flex;padding:0}
+.tab{flex:1;padding:12px 4px 10px;font-size:12px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;user-select:none;font-family:'Noto Serif SC',serif;text-align:center}
+.tab:hover{color:var(--t2)}.tab.on{color:var(--redb);border-bottom-color:var(--red)}
+.tab-d{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;display:block;margin-bottom:1px;opacity:.6}
+.panel{display:none}.panel.on{display:block}
+
+/* DAY SUMMARY */
+.ds{margin:14px 14px 0;background:var(--s1);border:1px solid var(--b1);border-radius:10px;overflow:hidden;position:relative}
+.ds::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--red),var(--gold))}
+.ds-inner{padding:14px 16px 14px 20px}
+.ds-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:0 10px;align-items:end}
+.ds-grid-row1{display:contents}
+.ds-grid-row2{display:contents}
+.ds-day{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--red);align-self:start}
+.ds-route{font-family:'Noto Serif SC',serif;font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:end}
+.ds-stat-lbl{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--t3);text-align:center;align-self:start}
+.ds-stat-val{font-size:18px;font-weight:700;white-space:nowrap;font-family:'Cinzel','Noto Serif SC',serif;text-align:center;align-self:end}
+.ds-stat-val.gold{color:var(--goldl)}
+
+/* TIMELINE */
+.tl{position:relative;padding:16px 14px 14px 54px;min-height:100px}
+.tl::before{content:'';position:absolute;left:31px;top:0;bottom:0;width:2px;background:var(--b1)}
+
+/* Dot base */
+.tl-dot{position:absolute;left:-35px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;font-size:10px;font-weight:600;transition:all .3s}
+
+/* Hotel dot */
+.dot-h{background:var(--s2);border:2px solid var(--gold);color:var(--gold);font-size:9px;font-family:'Noto Serif SC',serif}
+
+/* Stamp dot */
+.dot-s{background:var(--s2);border:2px solid var(--b2);color:var(--t3);font-family:'Cinzel',serif;top:50%;margin-top:-13px}
+.dot-s.ck{color:#fff;box-shadow:0 0 10px var(--redg)}
+.dot-s.slam{animation:dotSlam .5s cubic-bezier(.34,1.56,.64,1)}
+@keyframes dotSlam{
+  0%{transform:scale(1) rotate(0)}
+  18%{transform:scale(1.55) rotate(-12deg)}
+  38%{transform:scale(.78) rotate(5deg)}
+  58%{transform:scale(1.18) rotate(-2deg)}
+  78%{transform:scale(.95)}
+  100%{transform:scale(1)}
+}
+
+/* Hotel card */
+.htl{position:relative;margin-bottom:2px}
+.htl-c{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:10px 14px}
+.htl-label{font-size:9px;letter-spacing:2px;color:var(--gold);font-family:'Cinzel',serif;margin-bottom:2px}
+.htl-name{font-family:'Noto Serif SC',serif;font-size:13px;font-weight:600}
+.htl-loc{font-size:11px;color:var(--t3);margin-top:2px}
+
+/* CONNECTOR */
+.tl-conn{position:relative;min-height:30px;padding:8px 0;margin:0 0 2px}
+.tl-conn.col{padding:8px 0}
+.conn-dot{position:absolute;left:-35px;width:26px;display:flex;justify-content:center;align-items:center;z-index:1;cursor:pointer;top:0;bottom:0}
+.conn-icon{display:inline-block;background:var(--s2);border:1px solid var(--b1);border-radius:4px;padding:2px 6px;font-size:9px;color:var(--t2);white-space:nowrap;transition:all .2s}
+.tl-conn.col .conn-icon{background:var(--s3)}
+.tl-conn.col .conn-dot{top:0;bottom:0}
+.conn-body{overflow:hidden;transition:max-height .3s ease,opacity .2s;max-height:500px;opacity:1}
+.tl-conn.col .conn-body{max-height:0;opacity:0}
+.conn-inner{padding:4px 0 4px}
+
+/* Transport pills */
+.conn-sec{margin-bottom:10px}
+.conn-lbl{font-size:9px;color:var(--t3);margin-bottom:6px;letter-spacing:.5px}
+.tr-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
+.tr-btn{height:30px;padding:0 12px;border-radius:6px;font-size:11px;background:var(--s3);border:1px solid var(--b1);color:var(--t2);transition:all .15s;display:inline-flex;align-items:center;justify-content:center}
+.tr-btn:hover{border-color:var(--b2)}
+.tr-btn.on{background:var(--red);border-color:var(--red);color:#fff}
+.tr-custom{height:30px;width:58px;padding:0 6px;border-radius:6px;font-size:11px;background:var(--s3);border:1px solid var(--b1);color:var(--t1);outline:none;text-align:center}
+.tr-custom:focus{border-color:var(--b2)}
+.tr-custom::placeholder{color:var(--t3)}
+
+/* Difficulty in connector */
+.diff-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.diff-lbl{font-size:10px;color:var(--t3);flex-shrink:0}
+.diff-btns{display:flex;gap:3px}
+.d-btn{width:26px;height:26px;border-radius:5px;border:1px solid var(--b1);background:var(--s3);color:var(--t3);font-size:10px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.d-btn:hover{border-color:var(--b2)}
+.d-btn.on{background:var(--red);border-color:var(--red);color:#fff}
+
+/* Connector time pickers */
+.conn-times{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.ct{display:flex;align-items:center;gap:6px}
+.ct label{font-size:10px;color:var(--t3);flex-shrink:0}
+.ct input[type=time]{height:30px;padding:0 6px;border-radius:6px;background:var(--s3);border:1px solid var(--b1);color:var(--t1);font-size:12px;outline:none;-webkit-appearance:none;min-width:80px}
+.ct input[type=time]:focus{border-color:var(--b2)}
+.ct input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer}
+
+/* Connector location */
+.conn-loc{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.conn-loc label{font-size:10px;color:var(--t3);flex-shrink:0}
+.conn-loc input{flex:1;height:30px;padding:0 10px;border-radius:6px;font-size:11px;background:var(--s3);border:1px solid var(--b1);color:var(--t1);outline:none}
+.conn-loc input:focus{border-color:var(--b2)}
+.conn-loc input::placeholder{color:var(--t3)}
+
+/* Connector notes */
+.conn-note{display:flex;align-items:center;gap:8px}
+.conn-note label{font-size:10px;color:var(--t3);flex-shrink:0}
+.conn-note input{flex:1;height:30px;padding:0 10px;border-radius:6px;font-size:11px;background:var(--s3);border:1px solid var(--b1);color:var(--t1);outline:none}
+.conn-note input:focus{border-color:var(--b2)}
+.conn-note input::placeholder{color:var(--t3)}
+
+/* STAMP CARD — ultra compact */
+.tl-stamp{position:relative;margin-bottom:2px}
+.sc{background:var(--s1);border:1px solid var(--b1);border-radius:8px;overflow:hidden;transition:all .3s;position:relative}
+.sc.ck{border-color:rgba(200,53,26,.35)}
+.sc.stamping::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 25%,rgba(200,53,26,.2) 0%,transparent 65%);animation:inkFlash .6s ease forwards;pointer-events:none;border-radius:inherit;z-index:5}
+@keyframes inkFlash{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+
+.sc-top{padding:10px 62px 10px 12px;display:flex;flex-direction:column;gap:2px}
+.sc-wp{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--red)}
+.sc-row{display:flex;align-items:center;gap:10px}
+.sc-name{flex:1;font-family:'Noto Serif SC',serif;font-size:14px;font-weight:600;color:var(--t2);cursor:text}
+.sc-name-input{flex:1;font-family:'Noto Serif SC',serif;font-size:14px;font-weight:600;color:var(--t1);background:transparent;border:none;border-bottom:1px solid var(--b2);outline:none;padding:0 0 2px}
+.sc.ck .sc-name{color:var(--t1)}
+
+/* STAMP SEAL BUTTON */
+.stamp-seal{width:38px;height:38px;border-radius:50%;border:2px solid var(--b2);background:var(--s3);color:var(--t3);font-family:'Noto Serif SC',serif;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .3s;position:absolute;right:12px;top:50%;transform:translateY(-50%);overflow:hidden;z-index:3;cursor:pointer}
+.stamp-seal:hover{border-color:var(--t3);color:var(--t2)}
+.stamp-seal.on{background:var(--red);border-color:var(--red);color:#fff;box-shadow:0 2px 14px var(--redg)}
+.stamp-seal.ripple::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,.25);animation:sealRipple .5s ease forwards;border-radius:50%}
+@keyframes sealRipple{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(1.8)}}
+
+/* Info line in compact card */
+.sc-info{padding:4px 12px 8px;font-size:10px;color:var(--t3);line-height:16px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px}
+.sc-info .ii{color:var(--t2)}
+.sc-info .il{color:var(--t3)}
+.sc-info .sep{color:var(--b2)}
+/* Inline stamp time input */
+.sc-info input[type=time]{height:16px;padding:0 2px;border-radius:3px;background:transparent;border:1px solid transparent;color:var(--t2);font-size:10px;line-height:16px;outline:none;-webkit-appearance:none;width:60px;font-family:'Noto Sans SC',sans-serif;vertical-align:middle}
+.sc-info input[type=time]:hover{border-color:var(--b1)}
+.sc-info input[type=time]:focus{border-color:var(--b2);background:var(--s3)}
+.sc-info input[type=time]::-webkit-calendar-picker-indicator{filter:invert(.5);cursor:pointer;width:10px;height:10px;vertical-align:middle;margin:0;padding:0}
+
+/* Hotels panel */
+.hotels-hdr{padding:20px 14px 12px;font-family:'Noto Serif SC',serif;font-size:17px;font-weight:700;letter-spacing:2px}
+.hc{margin:0 14px 10px;background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px;position:relative;cursor:pointer;transition:border-color .2s}
+.hc.editing{border-color:var(--b2);cursor:default}
+.hc.booked::after{content:'OK';position:absolute;top:12px;right:12px;font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(34,120,34,.15);color:#5cb85c;border:1px solid rgba(34,120,34,.3)}
+.hc.pending::after{content:'TBD';position:absolute;top:12px;right:12px;font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(200,150,30,.12);color:var(--goldl);border:1px solid rgba(200,150,30,.3)}
+.hc-dates{font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;color:var(--red);margin-bottom:5px}
+.hc-name{font-family:'Noto Serif SC',serif;font-size:14px;font-weight:700;margin-bottom:8px;padding-right:40px}
+.hc-meta{display:flex;flex-wrap:wrap;gap:5px}
+.ht{background:var(--s3);border-radius:4px;padding:3px 8px;font-size:10px;color:var(--t2)}
+.ht.price{color:var(--goldl);background:rgba(180,146,46,.1)}
+.ht.ph{color:#7ab5e0;background:rgba(74,122,176,.1)}
+/* Editable hotel fields */
+.hc-edit{display:none;padding-top:10px;border-top:1px solid var(--b1);margin-top:10px}
+.hc.editing .hc-edit{display:block}
+.hc-edit-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.hc-edit-row label{font-size:9px;color:var(--t3);width:32px;flex-shrink:0}
+.hc-edit-row input,.hc-edit-row select{flex:1;height:26px;padding:0 8px;border-radius:5px;font-size:10px;background:var(--s3);border:1px solid var(--b1);color:var(--t1);outline:none}
+.hc-edit-row input:focus,.hc-edit-row select:focus{border-color:var(--b2)}
+.hc-edit-row select{-webkit-appearance:none;appearance:none}
+.hc-actions{display:flex;gap:6px;margin-top:4px}
+.hc-del{font-size:9px;color:var(--t3);cursor:pointer;padding:2px 6px;border-radius:3px}
+.hc-del:hover{color:#d45050;background:rgba(180,50,50,.1)}
+.htl-add{margin:0 14px 10px;height:36px;border-radius:10px;border:1px dashed var(--b2);color:var(--t3);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s;background:none;width:calc(100% - 28px)}
+.htl-add:hover{border-color:var(--t3);color:var(--t2)}
+
+/* SETTINGS */
+.cfg{padding:14px}
+.cfg-sec{background:var(--s1);border:1px solid var(--b1);border-radius:10px;padding:14px;margin-bottom:12px}
+.cfg-title{font-family:'Noto Serif SC',serif;font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.cfg-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.cfg-row label{font-size:10px;color:var(--t3);flex-shrink:0;width:40px}
+.cfg-row input{flex:1;height:30px;padding:0 10px;border-radius:6px;font-size:11px;background:var(--s3);border:1px solid var(--b1);color:var(--t1);outline:none}
+.cfg-row input:focus{border-color:var(--b2)}
+.cfg-sub{font-size:10px;color:var(--t3);margin:10px 0 6px;letter-spacing:.5px}
+/* Stamp chips */
+.chip-list{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;padding:6px;background:var(--s3);border-radius:8px;border:1px solid var(--b1)}
+.chip{display:flex;align-items:center;gap:4px;height:28px;padding:0 4px 0 10px;border-radius:14px;background:var(--s2);border:1px solid var(--b1);font-size:11px;color:var(--t1);cursor:grab;user-select:none;transition:all .15s}
+.chip:active{cursor:grabbing;opacity:.7}
+.chip.drag-over{border-color:var(--red);box-shadow:0 0 6px var(--redg)}
+.chip-name{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-edit{background:none;border:none;color:var(--t1);font-size:11px;width:auto;max-width:100px;padding:0;outline:none;font-family:inherit}
+.chip-x{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--t3);cursor:pointer;transition:all .15s;flex-shrink:0}
+.chip-x:hover{background:var(--red);color:#fff}
+.chip-add{height:28px;padding:0 12px;border-radius:14px;background:none;border:1px dashed var(--b2);color:var(--t3);font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.chip-add:hover{border-color:var(--t3);color:var(--t2)}
+/* Day toggle */
+.cfg-day-hdr{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.cfg-day-hdr .arr{font-size:10px;color:var(--t3);transition:transform .2s}
+.cfg-day-hdr.open .arr{transform:rotate(90deg)}
+.cfg-day-body{display:none;padding-top:10px}
+.cfg-day-hdr.open+.cfg-day-body{display:block}
+/* Action buttons */
+.cfg-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cfg-btn{height:34px;padding:0 16px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--b1)}
+.cfg-btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.cfg-btn.primary:hover{background:var(--redb)}
+.cfg-btn.danger{background:none;border-color:#8b3030;color:#d45050}
+.cfg-btn.danger:hover{background:rgba(180,50,50,.15)}
+.cfg-btn.ghost{background:none;color:var(--t2)}
+.cfg-btn.ghost:hover{background:var(--s3)}
+.cfg-del-day{font-size:10px;color:var(--t3);cursor:pointer;padding:4px 8px;border-radius:4px;transition:all .15s}
+.cfg-del-day:hover{color:#d45050;background:rgba(180,50,50,.1)}
+
+.spacer{height:40px}
+.fab{position:fixed;bottom:22px;right:18px;width:42px;height:42px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 14px var(--redg);opacity:0;transform:scale(.8);transition:all .3s;z-index:100;font-size:17px;color:#fff;user-select:none}
+.fab.show{opacity:1;transform:scale(1)}.fab:hover{background:var(--redb)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-sub">Kumano Kodo · Nakahechi Route</div>
+  <div class="hdr-title">熊野古道徒步手帐</div>
+  <div class="hdr-info">2025/9/26 — 9/30 · 纪伊半岛</div>
+</header>
+
+<div class="prog">
+  <div class="prog-lbl">PROGRESS</div>
+  <div class="prog-track"><div class="prog-fill" id="pf" style="width:0%"></div></div>
+  <div class="prog-num" id="pn">0<span> / 0</span></div>
+</div>
+
+<div class="tabs-w"><div class="tabs" id="tabs">
+  <div class="tab on" data-p="p1"><span class="tab-d">DAY 1 · 9/26</span>纪伊田边</div>
+  <div class="tab" data-p="p2"><span class="tab-d">DAY 2 · 9/27</span>蛇形地藏</div>
+  <div class="tab" data-p="p3"><span class="tab-d">DAY 3 · 9/28</span>请川-小口</div>
+  <div class="tab" data-p="p4"><span class="tab-d">DAY 4 · 9/29</span>地藏茶屋</div>
+  <div class="tab" data-p="p5"><span class="tab-d">DAY 5 · 9/30</span>高野坂</div>
+  <div class="tab" data-p="ph"><span class="tab-d">STAY</span>酒店预订</div>
+  <div class="tab" data-p="ps"><span class="tab-d">CONFIG</span>设置</div>
+</div></div>
+
+<div id="panels">
+  <div class="panel on" id="p1"></div>
+  <div class="panel" id="p2"></div>
+  <div class="panel" id="p3"></div>
+  <div class="panel" id="p4"></div>
+  <div class="panel" id="p5"></div>
+  <div class="panel" id="ph"></div>
+  <div class="panel" id="ps"></div>
+</div>
+
+<div class="fab" id="fab" onclick="scrollTo({top:0,behavior:'smooth'})">↑</div>
+
+<script>
+// ═══ DATA ═══
+const DEFAULT_DAYS=[
+{id:'p1',date:'9/26',day:'DAY 1',route:'纪伊田边-近露王子',
+ hs:{n:'Hotel Ki Tanabe',l:'田辺市 Takao-7-6'},
+ he:{n:'近露 民宿',l:'田辺市 近露字大地'},
+ stamps:[
+  {id:'d1-1',num:3,name:'稻叶跟王子',dt:'包车',loc:'道路旁石碑/木箱处'},
+  {id:'d1-2',num:2,name:'北郡越',dt:'包车',loc:'峠顶石碑旁木箱'},
+  {id:'d1-3',num:1,name:'潮见咔越',dt:'包车',loc:'峠顶展望处木箱'},
+  {id:'d1-4',num:4,name:'滝尻王子',dt:'徒步',loc:'滝尻王子宫遗址前木箱'},
+  {id:'d1-5',num:5,name:'不寝王子',dt:'徒步',loc:'古道旁石碑处木箱'},
+  {id:'d1-6',num:6,name:'高原熊野神社',dt:'徒步',loc:'神社拜殿横・境内'},
+  {id:'d1-7',num:7,name:'大門王子',dt:'徒步',loc:'古道旁石碑处木箱'},
+  {id:'d1-8',num:8,name:'十丈王子',dt:'徒步',loc:'古道旁石碑处木箱'},
+  {id:'d1-9',num:9,name:'大坂本王子',dt:'徒步',loc:'峠道旁木箱'},
+  {id:'d1-10',num:10,name:'牛馬童子像',dt:'徒步',loc:'石像旁休息处'},
+  {id:'d1-11',num:11,name:'近露王子',dt:'徒步',loc:'近露王子公园内'},
+  {id:'d1-12',num:12,name:'継樱王子',dt:'公交',loc:'野中清水附近社前'},
+  {id:'d1-13',num:13,name:'秀衡樱',dt:'公交',loc:'大樱花树旁'},
+]},
+{id:'p2',date:'9/27',day:'DAY 2',route:'蛇形地藏-汤峰',
+ hs:{n:'近露 民宿',l:'近露字大地'},
+ he:{n:'川汤 旅馆',l:'本宮町 Hongo-cho'},
+ stamps:[
+  {id:'d2-1',num:1,name:'蛇形地藏',dt:'徒步',loc:'古道旁地藏石像处'},
+  {id:'d2-2',num:2,name:'湯川王子',dt:'徒步',loc:'古道旁石碑处木箱'},
+  {id:'d2-3',num:3,name:'猪鼻王子',dt:'徒步',loc:'古道旁石碑处木箱'},
+  {id:'d2-4',num:4,name:'発心門王子',dt:'徒步',loc:'発心門王子社前的亭子旁'},
+  {id:'d2-5',num:5,name:'水吞王子',dt:'徒步',loc:'古道旁石碑处木箱'},
+  {id:'d2-6',num:6,name:'伏拜王子',dt:'徒步',loc:'展望台附近木箱'},
+  {id:'d2-7',num:7,name:'被殿王子',dt:'徒步',loc:'本宫大社入口前'},
+  {id:'d2-8',num:8,name:'熊野本宫大社',dt:'徒步',loc:'社务所或拜殿旁'},
+  {id:'d2-9',num:9,name:'旧社地大斋原',dt:'徒步',loc:'大鸟居入口处'},
+  {id:'d2-10',num:10,name:'汤峰王子',dt:'徒步',loc:'汤的温泉街入口'},
+]},
+{id:'p3',date:'9/28',day:'DAY 3',route:'请川-小口',
+ hs:{n:'川汤 旅馆',l:'本宮町'},
+ he:{n:'Koguchi Shizen-no-ie',l:'338 Kamiinagawa'},
+ stamps:[
+  {id:'d3-1',num:1,name:'请川',dt:'徒步',loc:'请川集落入口'},
+  {id:'d3-2',num:2,name:'石堂茶屋',dt:'徒步',loc:'茶屋遗址旁'},
+  {id:'d3-3',num:3,name:'小和瀬渡し場',dt:'徒步',loc:'渡场标识处'},
+  {id:'d3-4',num:4,name:'川的古道',dt:'徒步',loc:'古道标识旁'},
+  {id:'d3-5',num:5,name:'小口',dt:'徒步',loc:'小口自然の家前'},
+]},
+{id:'p4',date:'9/29',day:'DAY 4',route:'地藏茶屋-小狗子峠',
+ hs:{n:'Koguchi Shizen-no-ie',l:'Kumano-shi'},
+ he:{n:'那智胜浦 旅馆',l:'那智胜浦'},
+ stamps:[
+  {id:'d4-1',num:1,name:'地藏茶屋',dt:'徒步',loc:'茶屋遗址旁'},
+  {id:'d4-2',num:2,name:'青岸渡寺',dt:'徒步',loc:'寺院境内纳经所'},
+  {id:'d4-3',num:3,name:'熊野那智大社',dt:'徒步',loc:'社务所窗口'},
+  {id:'d4-4',num:4,name:'飛瀧神社',dt:'徒步',loc:'那智大滝观瀑台附近'},
+  {id:'d4-5',num:5,name:'多富気王子',dt:'徒步',loc:'古道旁石碑处'},
+  {id:'d4-6',num:6,name:'市野野王子',dt:'徒步',loc:'古道旁石碑处'},
+  {id:'d4-7',num:7,name:'補陀洛山寺',dt:'徒步',loc:'寺院门前'},
+  {id:'d4-8',num:8,name:'浜の宮王子',dt:'徒步',loc:'浜の宮公园内'},
+]},
+{id:'p5',date:'9/30',day:'DAY 5',route:'高野坂-熊野速玉大社',
+ hs:{n:'那智胜浦 旅馆',l:'那智胜浦'},
+ he:{n:'那智胜浦 旅馆',l:'那智胜浦'},
+ stamps:[
+  {id:'d5-1',num:1,name:'小狗子峠',dt:'徒步',loc:'峠顶标识处'},
+  {id:'d5-2',num:2,name:'高野坂',dt:'徒步',loc:'古道沿途石碑'},
+  {id:'d5-3',num:3,name:'阿須賀神社',dt:'徒步',loc:'神社境内'},
+  {id:'d5-4',num:4,name:'神倉神社',dt:'徒步',loc:'神社拜殿(537级石阶顶)'},
+  {id:'d5-5',num:5,name:'熊野速玉大社',dt:'徒步',loc:'社务所窗口'},
+]}
+];
+
+const DEFAULT_HOTELS=[
+  {dates:'9/25 — 9/26',area:'田边',name:'Hotel Ki Tanabe',addr:'田辺市 Takao-7-6',phone:'739-38-7000',source:'Booking',price:'¥416/晚',status:'booked'},
+  {dates:'9/26 — 9/27',area:'近露',name:'近露 民宿',addr:'田辺市 近露字大地',phone:'0968-11-8823',source:'日式房 Booking',price:'¥841/晚',status:'booked'},
+  {dates:'9/27 — 9/28',area:'川汤温泉',name:'川汤 旅馆',addr:'本宮町 Hongo-cho',phone:'733-42-1011',source:'日式房 Booking',price:'',status:'booked'},
+  {dates:'9/28 — 9/29',area:'小口',name:'Koguchi Shizen-no-ie',addr:'338 Kamiinagawa, Kumano-shi',phone:'735-43-2434',source:'民宿',price:'¥10,500/晚',status:'booked'},
+  {dates:'9/29 — 10/1',area:'那智胜浦',name:'那智胜浦 旅馆',addr:'',phone:'735-52-5011',source:'Booking',price:'¥2,129/晚',status:'booked'},
+  {dates:'10/1 — 10/3',area:'大阪',name:'大阪酒店',addr:'浪速区 Osaka',phone:'643-97-5045',source:'Expedia',price:'¥18,363/晚',status:'pending'},
+];
+
+// Load custom config or use defaults
+let DAYS=loadCfg()||JSON.parse(JSON.stringify(DEFAULT_DAYS));
+let HOTELS=loadHotels()||JSON.parse(JSON.stringify(DEFAULT_HOTELS));
+function loadHotels(){try{const c=localStorage.getItem('kv6-htl');return c?JSON.parse(c):null}catch(e){return null}}
+function saveHotels(){localStorage.setItem('kv6-htl',JSON.stringify(HOTELS))}
+function loadCfg(){try{const c=localStorage.getItem('kv6-cfg');return c?JSON.parse(c):null}catch(e){return null}}
+function saveCfg(){localStorage.setItem('kv6-cfg',JSON.stringify(DAYS))}
+
+// ═══ STATE ═══
+let S=load();
+function load(){try{return JSON.parse(localStorage.getItem('kv6')||'{}')}catch(e){return{}}}
+function save(){localStorage.setItem('kv6',JSON.stringify(S))}
+function gs(id){return(S.stamps&&S.stamps[id])||{}}
+function ss(id,f,v){if(!S.stamps)S.stamps={};if(!S.stamps[id])S.stamps[id]={};S.stamps[id][f]=v;save()}
+function gc(id){return(S.conns&&S.conns[id])||{}}
+function scn(id,f,v){if(!S.conns)S.conns={};if(!S.conns[id])S.conns[id]={};S.conns[id][f]=v;save()}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// ═══ TIME HELPERS ═══
+function parseT(s){if(!s)return null;const m=String(s).match(/(\d{1,2})[::：.](\d{2})/);return m?parseInt(m[1])*60+parseInt(m[2]):null}
+function fmtDur(m){if(m==null||isNaN(m))return'--';if(m<0)m+=1440;const h=Math.floor(m/60),mi=m%60;if(h===0)return mi+'分钟';if(mi===0)return h+'小时';return h+'时'+mi+'分'}
+function nowTime(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+
+// ═══ HELPERS ═══
+// Find the next stamp's loc hint for a given connector
+function getNextStampLoc(cid){
+  for(const day of DAYS){
+    for(let i=0;i<=day.stamps.length;i++){
+      if(`c-${day.id}-${i}`===cid){
+        if(i<day.stamps.length) return day.stamps[i].loc||'';
+        return '';
+      }
+    }
+  }
+  return '';
+}
+
+// ═══ RENDER ═══
+function render(){
+  DAYS.forEach(day=>{
+    const p=document.getElementById(day.id);if(!p)return;
+    const n=day.stamps.length;
+    const done=day.stamps.filter(s=>gs(s.id).checked).length;
+    const sm=calcSummary(day);
+    let h=`<div class="ds"><div class="ds-inner">
+      <div class="ds-grid">
+        <div class="ds-day">${day.day} · ${day.date}</div>
+        <div class="ds-stat-lbl">PROGRESS</div>
+        <div class="ds-stat-lbl">DURATION</div>
+        <div class="ds-stat-lbl">DIFFICULTY</div>
+        <div class="ds-route">${day.route}</div>
+        <div class="ds-stat-val gold" id="sv-p-${day.id}">${done}/${n}</div>
+        <div class="ds-stat-val gold" id="sv-t-${day.id}">${sm.totalTime}</div>
+        <div class="ds-stat-val gold" id="sv-d-${day.id}">${sm.avgDiff}</div>
+      </div></div></div><div class="tl">`;
+    h+=mkHotel(day.hs,'起');
+    h+=mkConn(`c-${day.id}-0`,day.stamps[0]?day.stamps[0].dt:'徒步');
+    day.stamps.forEach((s,i)=>{
+      h+=mkStamp(s,day.id,i,n);
+      if(i<n-1) h+=mkConn(`c-${day.id}-${i+1}`,day.stamps[i+1].dt);
+    });
+    h+=mkConn(`c-${day.id}-${n}`,'徒步');
+    h+=mkHotel(day.he,'止');
+    h+=`</div><div class="spacer"></div>`;
+    p.innerHTML=h;
+  });
+  updateTotal();
+}
+
+function mkHotel(h,label){
+  return`<div class="htl"><div class="tl-dot dot-h" style="top:10px">${label}</div><div class="htl-c"><div class="htl-label">${label==='起'?'START':'END'}</div><div class="htl-name">${esc(h.n)}</div><div class="htl-loc">${esc(h.l)}</div></div></div>`;
+}
+
+function mkConn(cid,defTr){
+  const c=gc(cid);
+  const tr=c.transport||defTr;
+  const col=(c.collapsed!==undefined)?c.collapsed:true;
+  const diff=c.difficulty||0;
+  const isHike=(tr==='徒步');
+  const presets=['徒步','公交','打车','包车'];
+  const isP=presets.includes(tr);
+  const locHint=getNextStampLoc(cid);
+  return`
+  <div class="tl-conn${col?' col':''}" id="cn-${cid}">
+    <div class="conn-dot" onclick="toggleConn('${cid}')"><span class="conn-icon">${esc(tr)}</span></div>
+    <div class="conn-body"><div class="conn-inner">
+      <div class="conn-sec">
+        <div class="conn-lbl">交通方式</div>
+        <div class="tr-row" id="to-${cid}">
+          ${presets.map(p=>`<button class="tr-btn${tr===p?' on':''}" onclick="setTr('${cid}','${p}')">${p}</button>`).join('')}
+          <input class="tr-custom" placeholder="其他" value="${esc(isP?'':tr)}" oninput="setTrC('${cid}',this.value)" onfocus="clrBtns('${cid}')">
+        </div>
+      </div>
+      <div class="diff-row" id="df-${cid}" style="${isHike?'':'display:none'}">
+        <div class="diff-lbl">难度</div>
+        <div class="diff-btns">
+          ${[1,2,3,4,5,6,7,8,9,10].map(n=>`<button class="d-btn${diff===n?' on':''}" onclick="setDiff('${cid}',${n})">${n}</button>`).join('')}
+        </div>
+      </div>
+      <div class="conn-times">
+        <div class="ct"><label>出发</label><input type="time" value="${esc(c.startTime||'')}" onchange="scn('${cid}','startTime',this.value);recalc('${cid}')"></div>
+        <div class="ct"><label>到达</label><input type="time" value="${esc(c.arrivalTime||'')}" onchange="scn('${cid}','arrivalTime',this.value);recalc('${cid}')"></div>
+      </div>
+      <div class="conn-loc"><label>位置</label><input value="${esc(c.location||'')}" placeholder="${esc(locHint||'下一盖章点位置...')}" oninput="scn('${cid}','location',this.value)"></div>
+      <div class="conn-note"><label>备注</label><input value="${esc(c.notes||'')}" placeholder="填写备注..." oninput="scn('${cid}','notes',this.value)"></div>
+    </div></div>
+  </div>`;
+}
+
+function dotColor(idx,total){
+  const t=total>1?idx/(total-1):0;
+  const r=Math.round(200+(184-200)*t);
+  const g=Math.round(53+(146-53)*t);
+  const b=Math.round(26+(46-26)*t);
+  return`rgb(${r},${g},${b})`;
+}
+
+function mkStamp(s,dayId,idx,total){
+  const st=gs(s.id);
+  const ck=!!st.checked;
+  const cid=`c-${dayId}-${idx}`;
+  const c=gc(cid);
+  const diff=c.difficulty||0;
+  const startT=c.startTime||'';
+  const arrT=c.arrivalTime||'';
+  const dur=(parseT(startT)!=null&&parseT(arrT)!=null)?fmtDur(parseT(arrT)-parseT(startT)):'';
+  const stampT=st.stampTime||'';
+  // Build info fragments
+  let infoParts=[];
+  if(diff) infoParts.push(`<span class="il">难度</span><span class="ii">${diff}</span>`);
+  if(startT) infoParts.push(`<span class="il">出发</span><span class="ii">${esc(startT)}</span>`);
+  if(arrT) infoParts.push(`<span class="il">到达</span><span class="ii">${esc(arrT)}</span>`);
+  if(dur) infoParts.push(`<span class="il">用时</span><span class="ii">${dur}</span>`);
+  if(stampT) infoParts.push(`<span class="il">盖章</span><input type="time" id="stinp-${s.id}" value="${esc(stampT)}" onchange="ss('${s.id}','stampTime',this.value);refreshInfo('${s.id}','${dayId}')">`);
+  const infoHtml=infoParts.join('<span class="sep">·</span>');
+  return`
+  <div class="tl-stamp" id="si-${s.id}">
+    <div class="tl-dot dot-s${ck?' ck':''}" id="dot-${s.id}"${ck?` style="background:${dotColor(idx,total)};border-color:${dotColor(idx,total)}"`:''}>
+      ${s.num}
+    </div>
+    <div class="sc${ck?' ck':''}" id="sc-${s.id}">
+      <div class="sc-top">
+        <div class="sc-wp">WAYPOINT ${idx+1}</div>
+        <div class="sc-row">
+          <div class="sc-name" onclick="editStampName(this,'${dayId}',${idx})">${esc(s.name)}</div>
+          <button class="stamp-seal${ck?' on':''}" id="sb-${s.id}" onclick="doStamp('${s.id}','${dayId}')">判</button>
+        </div>
+      </div>
+      <div class="sc-info" id="ir-${s.id}" style="${infoParts.length?'':'display:none'}">${infoHtml}</div>
+    </div>
+  </div>`;
+}
+
+// ═══ INTERACTIONS ═══
+function editStampName(el,dayId,idx){
+  const day=DAYS.find(d=>d.id===dayId);if(!day)return;
+  const s=day.stamps[idx];if(!s)return;
+  const inp=document.createElement('input');
+  inp.className='sc-name-input';inp.value=s.name;
+  inp.onblur=()=>{
+    const v=inp.value.trim()||'未命名';
+    s.name=v;saveCfg();
+    const span=document.createElement('div');
+    span.className='sc-name';span.textContent=v;
+    span.onclick=()=>editStampName(span,dayId,idx);
+    inp.replaceWith(span);
+    renderSettings();
+  };
+  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.value=s.name;inp.blur()}};
+  el.replaceWith(inp);inp.focus();inp.select();
+}
+
+function doStamp(id,dayId){
+  const ck=!gs(id).checked;
+  ss(id,'checked',ck);
+  if(ck){
+    const t=nowTime();
+    ss(id,'stampTime',t);
+    const inp=document.getElementById('stinp-'+id);
+    if(inp)inp.value=t;
+  }else{
+    ss(id,'stampTime','');
+  }
+  const dot=document.getElementById('dot-'+id);
+  const sc=document.getElementById('sc-'+id);
+  const sb=document.getElementById('sb-'+id);
+  // Find index and total for gradient
+  const day=DAYS.find(d=>d.id===dayId);
+  const idx=day?day.stamps.findIndex(s=>s.id===id):-1;
+  const total=day?day.stamps.length:1;
+  if(dot){
+    dot.classList.toggle('ck',ck);
+    if(ck){
+      const c=dotColor(idx,total);
+      dot.style.background=c;dot.style.borderColor=c;
+      dot.classList.remove('slam');void dot.offsetWidth;dot.classList.add('slam');
+    }else{
+      dot.style.background='';dot.style.borderColor='';
+    }
+  }
+  if(sc){sc.classList.toggle('ck',ck);if(ck){sc.classList.remove('stamping');void sc.offsetWidth;sc.classList.add('stamping');setTimeout(()=>sc.classList.remove('stamping'),700)}}
+  if(sb){sb.classList.toggle('on',ck);if(ck){sb.classList.add('ripple');setTimeout(()=>sb.classList.remove('ripple'),600)}}
+  refreshInfo(id,dayId);
+  updateDay(dayId);updateTotal();
+}
+
+function setDiff(cid,n){
+  const c=gc(cid);
+  const cur=c.difficulty||0;
+  const val=cur===n?0:n;
+  scn(cid,'difficulty',val);
+  document.querySelectorAll(`#df-${cid} .d-btn`).forEach(b=>b.classList.toggle('on',parseInt(b.textContent)===val));
+  // Find which day this connector belongs to and update
+  for(const day of DAYS){
+    for(let i=0;i<=day.stamps.length;i++){
+      if(`c-${day.id}-${i}`===cid){
+        if(i<day.stamps.length) refreshInfo(day.stamps[i].id,day.id);
+        updateDay(day.id);
+        return;
+      }
+    }
+  }
+}
+
+function toggleConn(cid){
+  const el=document.getElementById('cn-'+cid);
+  if(!el)return;
+  el.classList.toggle('col');
+  scn(cid,'collapsed',el.classList.contains('col'));
+}
+
+function setTr(cid,val){
+  scn(cid,'transport',val);
+  const w=document.getElementById('to-'+cid);
+  if(w){w.querySelectorAll('.tr-btn').forEach(b=>b.classList.toggle('on',b.textContent===val));w.querySelector('.tr-custom').value=''}
+  const ic=document.querySelector(`#cn-${cid} .conn-icon`);if(ic)ic.textContent=val;
+  // Show/hide difficulty
+  const df=document.getElementById('df-'+cid);
+  if(df) df.style.display=(val==='徒步')?'':'none';
+  // If not hiking, clear difficulty
+  if(val!=='徒步'){
+    scn(cid,'difficulty',0);
+    if(df) df.querySelectorAll('.d-btn').forEach(b=>b.classList.remove('on'));
+    // Refresh stamp info
+    for(const day of DAYS){
+      for(let i=0;i<day.stamps.length;i++){
+        if(`c-${day.id}-${i}`===cid){
+          refreshInfo(day.stamps[i].id,day.id);
+          updateDay(day.id);
+          return;
+        }
+      }
+    }
+  }
+}
+function setTrC(cid,val){
+  if(!val)return;scn(cid,'transport',val);
+  const w=document.getElementById('to-'+cid);if(w)w.querySelectorAll('.tr-btn').forEach(b=>b.classList.remove('on'));
+  const ic=document.querySelector(`#cn-${cid} .conn-icon`);if(ic)ic.textContent=val;
+  // Hide difficulty for non-hike
+  const df=document.getElementById('df-'+cid);
+  if(df) df.style.display='none';
+  scn(cid,'difficulty',0);
+}
+function clrBtns(cid){
+  const w=document.getElementById('to-'+cid);
+  if(w&&w.querySelector('.tr-custom').value)w.querySelectorAll('.tr-btn').forEach(b=>b.classList.remove('on'));
+}
+
+function recalc(cid){
+  for(const day of DAYS){
+    for(let i=0;i<=day.stamps.length;i++){
+      if(`c-${day.id}-${i}`===cid){
+        if(i<day.stamps.length) refreshInfo(day.stamps[i].id,day.id);
+        updateDay(day.id);
+        return;
+      }
+    }
+  }
+}
+
+function refreshInfo(sid,dayId){
+  const st=gs(sid);
+  const day=DAYS.find(d=>d.id===dayId);if(!day)return;
+  const idx=day.stamps.findIndex(s=>s.id===sid);if(idx<0)return;
+  const cid=`c-${dayId}-${idx}`;
+  const c=gc(cid);
+  const diff=c.difficulty||0;
+  const startT=c.startTime||'';
+  const arrT=c.arrivalTime||'';
+  const dur=(parseT(startT)!=null&&parseT(arrT)!=null)?fmtDur(parseT(arrT)-parseT(startT)):'';
+  const stampT=st.stampTime||'';
+  let parts=[];
+  if(diff) parts.push(`<span class="il">难度</span><span class="ii">${diff}</span>`);
+  if(startT) parts.push(`<span class="il">出发</span><span class="ii">${esc(startT)}</span>`);
+  if(arrT) parts.push(`<span class="il">到达</span><span class="ii">${esc(arrT)}</span>`);
+  if(dur) parts.push(`<span class="il">用时</span><span class="ii">${dur}</span>`);
+  if(stampT) parts.push(`<span class="il">盖章</span><input type="time" id="stinp-${sid}" value="${esc(stampT)}" onchange="ss('${sid}','stampTime',this.value);refreshInfo('${sid}','${dayId}')">`);
+  const ir=document.getElementById('ir-'+sid);
+  if(ir){ir.innerHTML=parts.join('<span class="sep">·</span>');ir.style.display=parts.length?'':'none'}
+  updateDay(dayId);
+}
+
+// ═══ SUMMARY ═══
+function calcSummary(day){
+  let first=null,last=null,dS=0,dC=0;
+  day.stamps.forEach((s,i)=>{
+    const cid=`c-${day.id}-${i}`;
+    const c=gc(cid);
+    const t1=parseT(c.startTime),t2=parseT(c.arrivalTime);
+    if(t1!=null&&(first==null||t1<first))first=t1;
+    if(t2!=null&&(last==null||t2>last))last=t2;
+    // Difficulty now from connector
+    if(c.difficulty){dS+=c.difficulty;dC++}
+  });
+  return{totalTime:(first!=null&&last!=null)?fmtDur(last-first):'--',avgDiff:dC>0?(dS/dC).toFixed(1):'--'};
+}
+
+function updateDay(dayId){
+  const day=DAYS.find(d=>d.id===dayId);if(!day)return;
+  const n=day.stamps.length;
+  const done=day.stamps.filter(s=>gs(s.id).checked).length;
+  const sm=calcSummary(day);
+  const ep=document.getElementById('sv-p-'+dayId);if(ep)ep.textContent=done+'/'+n;
+  const et=document.getElementById('sv-t-'+dayId);if(et)et.textContent=sm.totalTime;
+  const ed=document.getElementById('sv-d-'+dayId);if(ed)ed.textContent=sm.avgDiff;
+}
+
+function updateTotal(){
+  let done=0,total=0;
+  DAYS.forEach(d=>d.stamps.forEach(s=>{total++;if(gs(s.id).checked)done++}));
+  const pct=total?(done/total*100):0;
+  document.getElementById('pf').style.width=pct+'%';
+  document.getElementById('pn').innerHTML=done+'<span> / '+total+'</span>';
+}
+
+// ═══ HOTELS ═══
+function renderHotels(){
+  const ph=document.getElementById('ph');if(!ph)return;
+  let h=`<div class="hotels-hdr">酒店预订一览</div>`;
+  HOTELS.forEach((ht,i)=>{
+    const st=ht.status==='booked'?'booked':'pending';
+    h+=`<div class="hc ${st}" id="htl-${i}" onclick="toggleHtlEdit(${i},event)">
+      <div class="hc-dates">${esc(ht.dates)}${ht.area?' · '+esc(ht.area):''}</div>
+      <div class="hc-name">${esc(ht.name)}</div>
+      <div class="hc-meta">
+        ${ht.addr?`<div class="ht">${esc(ht.addr)}</div>`:''}
+        ${ht.phone?`<div class="ht ph">${esc(ht.phone)}</div>`:''}
+        ${ht.source?`<div class="ht">${esc(ht.source)}</div>`:''}
+        ${ht.price?`<div class="ht price">${esc(ht.price)}</div>`:''}
+        ${st==='pending'?'<div class="ht" style="color:#e0a030;background:rgba(224,160,48,.1)">待确认</div>':''}
+      </div>
+      <div class="hc-edit">
+        <div class="hc-edit-row"><label>日期</label><input value="${esc(ht.dates)}" oninput="HOTELS[${i}].dates=this.value;saveHotels()"></div>
+        <div class="hc-edit-row"><label>地区</label><input value="${esc(ht.area||'')}" oninput="HOTELS[${i}].area=this.value;saveHotels()"></div>
+        <div class="hc-edit-row"><label>名称</label><input value="${esc(ht.name)}" oninput="HOTELS[${i}].name=this.value;saveHotels()"></div>
+        <div class="hc-edit-row"><label>地址</label><input value="${esc(ht.addr||'')}" oninput="HOTELS[${i}].addr=this.value;saveHotels()"></div>
+        <div class="hc-edit-row"><label>电话</label><input value="${esc(ht.phone||'')}" oninput="HOTELS[${i}].phone=this.value;saveHotels()"></div>
+        <div class="hc-edit-row"><label>来源</label><input value="${esc(ht.source||'')}" oninput="HOTELS[${i}].source=this.value;saveHotels()"></div>
+        <div class="hc-edit-row"><label>价格</label><input value="${esc(ht.price||'')}" oninput="HOTELS[${i}].price=this.value;saveHotels()"></div>
+        <div class="hc-edit-row"><label>状态</label><select onchange="HOTELS[${i}].status=this.value;saveHotels();renderHotels()"><option value="booked"${st==='booked'?' selected':''}>已确认</option><option value="pending"${st==='pending'?' selected':''}>待确认</option></select></div>
+        <div class="hc-actions"><span class="hc-del" onclick="delHotel(${i})">删除此酒店</span><span class="hc-del" style="color:var(--t2)" onclick="renderHotels()">完成</span></div>
+      </div>
+    </div>`;
+  });
+  h+=`<button class="htl-add" onclick="addHotel()">+ 添加酒店</button>`;
+  h+=`<div class="spacer"></div>`;
+  ph.innerHTML=h;
+}
+
+function toggleHtlEdit(i,ev){
+  if(ev&&(ev.target.tagName==='INPUT'||ev.target.tagName==='SELECT'||ev.target.classList.contains('hc-del')))return;
+  const el=document.getElementById('htl-'+i);
+  if(el) el.classList.toggle('editing');
+}
+function addHotel(){
+  HOTELS.push({dates:'',area:'',name:'新酒店',addr:'',phone:'',source:'',price:'',status:'pending'});
+  saveHotels();renderHotels();
+  // Auto-open edit for the new one
+  setTimeout(()=>toggleHtlEdit(HOTELS.length-1),50);
+}
+function delHotel(i){
+  if(!confirm('确定删除此酒店？'))return;
+  HOTELS.splice(i,1);saveHotels();renderHotels();
+}
+
+// ═══ SETTINGS ═══
+function renderSettings(){
+  const ps=document.getElementById('ps');if(!ps)return;
+  let h=`<div class="cfg">`;
+  // Per-day config
+  DAYS.forEach((day,di)=>{
+    h+=`<div class="cfg-sec">
+      <div class="cfg-day-hdr" onclick="this.classList.toggle('open')">
+        <span class="arr">▶</span>
+        <span style="flex:1;font-family:'Noto Serif SC',serif;font-size:14px;font-weight:600">${esc(day.day)} · ${esc(day.route)}</span>
+        ${DAYS.length>1?`<span class="cfg-del-day" onclick="event.stopPropagation();delDay(${di})">删除</span>`:''}
+      </div>
+      <div class="cfg-day-body">
+        <div class="cfg-row"><label>日期</label><input value="${esc(day.date)}" oninput="DAYS[${di}].date=this.value;saveCfg()"></div>
+        <div class="cfg-row"><label>标签</label><input value="${esc(day.day)}" oninput="DAYS[${di}].day=this.value;saveCfg()"></div>
+        <div class="cfg-row"><label>路线</label><input value="${esc(day.route)}" oninput="DAYS[${di}].route=this.value;saveCfg()"></div>
+        <div class="cfg-sub">起点酒店</div>
+        <div class="cfg-row"><label>名称</label><input value="${esc(day.hs.n)}" oninput="DAYS[${di}].hs.n=this.value;saveCfg()"></div>
+        <div class="cfg-row"><label>地址</label><input value="${esc(day.hs.l)}" oninput="DAYS[${di}].hs.l=this.value;saveCfg()"></div>
+        <div class="cfg-sub">终点酒店</div>
+        <div class="cfg-row"><label>名称</label><input value="${esc(day.he.n)}" oninput="DAYS[${di}].he.n=this.value;saveCfg()"></div>
+        <div class="cfg-row"><label>地址</label><input value="${esc(day.he.l)}" oninput="DAYS[${di}].he.l=this.value;saveCfg()"></div>
+        <div class="cfg-sub">盖章点（拖动排序）</div>
+        <div class="chip-list" id="chips-${di}" data-di="${di}">
+          ${day.stamps.map((s,si)=>`<div class="chip" draggable="true" data-di="${di}" data-si="${si}">
+            <span class="chip-name" ondblclick="editChip(this,${di},${si})">${esc(s.name)}</span>
+            <span class="chip-x" onclick="delStamp(${di},${si})">×</span>
+          </div>`).join('')}
+          <button class="chip-add" onclick="addStamp(${di})">+ 添加</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  h+=`<button class="cfg-btn ghost" onclick="addDay()" style="margin-bottom:12px">+ 添加一天</button>`;
+  h+=`<div class="cfg-actions">
+    <button class="cfg-btn primary" onclick="applySettings()">保存并刷新</button>
+    <button class="cfg-btn danger" onclick="clearAllData()">清空所有记录</button>
+    <button class="cfg-btn ghost" onclick="resetDefaults()">恢复默认</button>
+  </div></div>`;
+  ps.innerHTML=h;
+  // Init drag and drop
+  initChipDrag();
+}
+
+let dragState=null;
+function initChipDrag(){
+  document.querySelectorAll('.chip[draggable]').forEach(el=>{
+    el.addEventListener('dragstart',e=>{
+      dragState={di:+el.dataset.di,si:+el.dataset.si};
+      el.style.opacity='.5';
+      e.dataTransfer.effectAllowed='move';
+    });
+    el.addEventListener('dragend',()=>{el.style.opacity='';dragState=null;
+      document.querySelectorAll('.chip.drag-over').forEach(c=>c.classList.remove('drag-over'));
+    });
+    el.addEventListener('dragover',e=>{
+      e.preventDefault();e.dataTransfer.dropEffect='move';
+      el.classList.add('drag-over');
+    });
+    el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+    el.addEventListener('drop',e=>{
+      e.preventDefault();el.classList.remove('drag-over');
+      if(!dragState)return;
+      const tdi=+el.dataset.di,tsi=+el.dataset.si;
+      if(dragState.di===tdi){
+        const arr=DAYS[tdi].stamps;
+        const item=arr.splice(dragState.si,1)[0];
+        arr.splice(tsi,0,item);
+        regenIds(tdi);saveCfg();renderSettings();
+      }
+    });
+  });
+}
+
+function regenIds(di){
+  DAYS[di].stamps.forEach((s,i)=>{s.num=i+1;s.id=`d${di+1}-${i+1}`});
+}
+
+function editChip(span,di,si){
+  const inp=document.createElement('input');
+  inp.className='chip-edit';inp.value=DAYS[di].stamps[si].name;
+  inp.onblur=()=>{DAYS[di].stamps[si].name=inp.value||'未命名';saveCfg();renderSettings()};
+  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur()};
+  span.replaceWith(inp);inp.focus();inp.select();
+}
+
+function addStamp(di){
+  const n=DAYS[di].stamps.length+1;
+  DAYS[di].stamps.push({id:`d${di+1}-${n}`,num:n,name:'新盖章点',dt:'徒步',loc:''});
+  saveCfg();renderSettings();
+}
+
+function delStamp(di,si){
+  DAYS[di].stamps.splice(si,1);
+  regenIds(di);saveCfg();renderSettings();
+}
+
+function addDay(){
+  const n=DAYS.length+1;
+  DAYS.push({id:`p${n}`,date:`${n}`,day:`DAY ${n}`,route:'新路线',
+    hs:{n:'起点酒店',l:''},he:{n:'终点酒店',l:''},stamps:[]});
+  saveCfg();renderSettings();
+}
+
+function delDay(di){
+  if(!confirm(`确定删除 ${DAYS[di].day} · ${DAYS[di].route}？`))return;
+  DAYS.splice(di,1);
+  // Regen all day ids
+  DAYS.forEach((d,i)=>{d.id=`p${i+1}`;regenIds(i)});
+  saveCfg();renderSettings();
+}
+
+function applySettings(){
+  // Rebuild panels HTML
+  const panels=document.getElementById('panels');
+  // Remove old day panels
+  document.querySelectorAll('.panel[id^="p"]:not(#ph):not(#ps)').forEach(el=>el.remove());
+  // Rebuild tabs
+  const tabsEl=document.getElementById('tabs');
+  const hotTab=tabsEl.querySelector('[data-p="ph"]');
+  const cfgTab=tabsEl.querySelector('[data-p="ps"]');
+  tabsEl.querySelectorAll('.tab[data-p^="p"]:not([data-p="ph"]):not([data-p="ps"])').forEach(el=>el.remove());
+  DAYS.forEach((d,i)=>{
+    d.id=`p${i+1}`;regenIds(i);
+    const tab=document.createElement('div');
+    tab.className='tab'+(i===0?' on':'');tab.dataset.p=d.id;
+    tab.innerHTML=`<span class="tab-d">${esc(d.day)} · ${esc(d.date)}</span>${esc(d.route.split('-')[0])}`;
+    tabsEl.insertBefore(tab,hotTab);
+    const panel=document.createElement('div');
+    panel.className='panel'+(i===0?' on':'');panel.id=d.id;
+    panels.insertBefore(panel,document.getElementById('ph'));
+  });
+  saveCfg();render();
+  // Switch to first day
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  const ft=tabsEl.querySelector('.tab');if(ft){ft.classList.add('on');document.getElementById(ft.dataset.p).classList.add('on')}
+}
+
+function clearAllData(){
+  if(!confirm('确定清空所有盖章记录和填写的数据？'))return;
+  S={};save();render();
+}
+
+function resetDefaults(){
+  if(!confirm('确定恢复为默认行程？当前自定义设置将丢失。'))return;
+  DAYS=JSON.parse(JSON.stringify(DEFAULT_DAYS));
+  HOTELS=JSON.parse(JSON.stringify(DEFAULT_HOTELS));
+  saveCfg();saveHotels();applySettings();renderHotels();renderSettings();
+}
+
+// ═══ TABS ═══
+document.getElementById('tabs').addEventListener('click',ev=>{
+  const t=ev.target.closest('.tab');if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');document.getElementById(t.dataset.p).classList.add('on');
+  scrollTo({top:0,behavior:'smooth'});
+});
+addEventListener('scroll',()=>document.getElementById('fab').classList.toggle('show',scrollY>180));
+render();renderHotels();renderSettings();
+</script>
+</body>
+</html>
