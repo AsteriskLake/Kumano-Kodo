@@ -45,6 +45,8 @@ input,textarea,select{font-family:inherit}
 .tab-dt{display:block;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;opacity:.6}
 @media(max-width:480px){.tab{white-space:normal;font-size:11px;padding:8px 3px 6px;line-height:1.3}}
 .panel{display:none}.panel.on{display:block}
+#ph,#ps{min-height:calc(100vh - 160px);display:none;flex-direction:column;justify-content:center}
+#ph.on,#ps.on{display:flex}
 
 /* DAY SUMMARY */
 .ds{margin:14px 14px 0;background:var(--s1);border:1px solid var(--b1);border-radius:10px;overflow:hidden;position:relative}
@@ -68,7 +70,7 @@ input,textarea,select{font-family:inherit}
 .tl-dot{position:absolute;left:-35px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;font-size:10px;font-weight:600;transition:all .3s}
 
 /* Hotel dot */
-.dot-h{background:var(--s2);border:2px solid var(--gold);color:var(--gold);font-size:9px;font-family:'Noto Serif SC',serif}
+.dot-h{background:var(--s2);border:2px solid var(--gold);color:var(--gold);font-size:9px;font-family:'Noto Serif SC',serif;top:50%;margin-top:-13px}
 
 /* Stamp dot */
 .dot-s{background:var(--s2);border:2px solid var(--b2);color:var(--t3);font-family:'Cinzel',serif;top:50%;margin-top:-13px}
@@ -164,8 +166,9 @@ input,textarea,select{font-family:inherit}
 @keyframes sealRipple{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(1.8)}}
 
 /* Info line in compact card */
-.sc-info{padding:4px 12px 8px;font-size:10px;color:var(--t3);line-height:16px;display:flex;flex-wrap:nowrap;align-items:center;gap:2px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap}
-.sc-info::-webkit-scrollbar{display:none}
+.sc-info{padding:4px 12px 8px;font-size:10px;color:var(--t3);line-height:16px}
+.sc-info-row{display:flex;align-items:center;gap:2px 6px;white-space:nowrap}
+.sc-info-row+.sc-info-row{margin-top:2px}
 .sc-info .ii{color:var(--t2)}
 .sc-info .il{color:var(--t3)}
 .sc-info .sep{color:var(--b2)}
@@ -430,7 +433,7 @@ function render(){
 }
 
 function mkHotel(h,label){
-  return`<div class="htl"><div class="tl-dot dot-h" style="top:10px">${label}</div><div class="htl-c"><div class="htl-label">${label==='起'?'START':'END'}</div><div class="htl-name">${esc(h.n)}</div><div class="htl-loc">${esc(h.l)}</div></div></div>`;
+  return`<div class="htl"><div class="tl-dot dot-h">${label}</div><div class="htl-c"><div class="htl-label">${label==='起'?'START':'END'}</div><div class="htl-name">${esc(h.n)}</div><div class="htl-loc">${esc(h.l)}</div></div></div>`;
 }
 
 function mkConn(cid,defTr){
@@ -487,14 +490,17 @@ function mkStamp(s,dayId,idx,total){
   const arrT=c.arrivalTime||'';
   const dur=(parseT(startT)!=null&&parseT(arrT)!=null)?fmtDur(parseT(arrT)-parseT(startT)):'';
   const stampT=st.stampTime||'';
-  // Build info fragments
-  let infoParts=[];
-  if(diff) infoParts.push(`<span class="il">难度</span><span class="ii">${diff}</span>`);
-  if(startT) infoParts.push(`<span class="il">出发</span><span class="ii">${esc(startT)}</span>`);
-  if(arrT) infoParts.push(`<span class="il">到达</span><span class="ii">${esc(arrT)}</span>`);
-  if(dur) infoParts.push(`<span class="il">用时</span><span class="ii">${dur}</span>`);
-  if(stampT) infoParts.push(`<span class="il">盖章</span><input type="time" id="stinp-${s.id}" value="${esc(stampT)}" onchange="ss('${s.id}','stampTime',this.value);refreshInfo('${s.id}','${dayId}')">`);
-  const infoHtml=infoParts.join('<span class="sep">·</span>');
+  // Build info: row1 = difficulty + duration, row2 = times
+  let row1=[], row2=[];
+  if(diff) row1.push(`<span class="il">难度</span><span class="ii">${diff}</span>`);
+  if(dur) row1.push(`<span class="il">用时</span><span class="ii">${dur}</span>`);
+  if(startT) row2.push(`<span class="il">出发</span><span class="ii">${esc(startT)}</span>`);
+  if(arrT) row2.push(`<span class="il">到达</span><span class="ii">${esc(arrT)}</span>`);
+  if(stampT) row2.push(`<span class="il">盖章</span><input type="time" id="stinp-${s.id}" value="${esc(stampT)}" onchange="ss('${s.id}','stampTime',this.value);refreshInfo('${s.id}','${dayId}')">`);
+  const hasInfo=row1.length||row2.length;
+  let infoHtml='';
+  if(row1.length) infoHtml+=`<div class="sc-info-row">${row1.join('<span class="sep">·</span>')}</div>`;
+  if(row2.length) infoHtml+=`<div class="sc-info-row">${row2.join('<span class="sep">·</span>')}</div>`;
   return`
   <div class="tl-stamp" id="si-${s.id}">
     <div class="tl-dot dot-s${ck?' ck':''}" id="dot-${s.id}"${ck?` style="background:${dotColor(idx,total)};border-color:${dotColor(idx,total)}"`:''}>
@@ -508,7 +514,7 @@ function mkStamp(s,dayId,idx,total){
           <button class="stamp-seal${ck?' on':''}" id="sb-${s.id}" onclick="doStamp('${s.id}','${dayId}')">判</button>
         </div>
       </div>
-      <div class="sc-info" id="ir-${s.id}" style="${infoParts.length?'':'display:none'}">${infoHtml}</div>
+      <div class="sc-info" id="ir-${s.id}" style="${hasInfo?'':'display:none'}">${infoHtml}</div>
     </div>
   </div>`;
 }
@@ -652,14 +658,18 @@ function refreshInfo(sid,dayId){
   const arrT=c.arrivalTime||'';
   const dur=(parseT(startT)!=null&&parseT(arrT)!=null)?fmtDur(parseT(arrT)-parseT(startT)):'';
   const stampT=st.stampTime||'';
-  let parts=[];
-  if(diff) parts.push(`<span class="il">难度</span><span class="ii">${diff}</span>`);
-  if(startT) parts.push(`<span class="il">出发</span><span class="ii">${esc(startT)}</span>`);
-  if(arrT) parts.push(`<span class="il">到达</span><span class="ii">${esc(arrT)}</span>`);
-  if(dur) parts.push(`<span class="il">用时</span><span class="ii">${dur}</span>`);
-  if(stampT) parts.push(`<span class="il">盖章</span><input type="time" id="stinp-${sid}" value="${esc(stampT)}" onchange="ss('${sid}','stampTime',this.value);refreshInfo('${sid}','${dayId}')">`);
+  let row1=[], row2=[];
+  if(diff) row1.push(`<span class="il">难度</span><span class="ii">${diff}</span>`);
+  if(dur) row1.push(`<span class="il">用时</span><span class="ii">${dur}</span>`);
+  if(startT) row2.push(`<span class="il">出发</span><span class="ii">${esc(startT)}</span>`);
+  if(arrT) row2.push(`<span class="il">到达</span><span class="ii">${esc(arrT)}</span>`);
+  if(stampT) row2.push(`<span class="il">盖章</span><input type="time" id="stinp-${sid}" value="${esc(stampT)}" onchange="ss('${sid}','stampTime',this.value);refreshInfo('${sid}','${dayId}')">`);
+  const hasInfo=row1.length||row2.length;
+  let html='';
+  if(row1.length) html+=`<div class="sc-info-row">${row1.join('<span class="sep">·</span>')}</div>`;
+  if(row2.length) html+=`<div class="sc-info-row">${row2.join('<span class="sep">·</span>')}</div>`;
   const ir=document.getElementById('ir-'+sid);
-  if(ir){ir.innerHTML=parts.join('<span class="sep">·</span>');ir.style.display=parts.length?'':'none'}
+  if(ir){ir.innerHTML=html;ir.style.display=hasInfo?'':'none'}
   updateDay(dayId);
 }
 
