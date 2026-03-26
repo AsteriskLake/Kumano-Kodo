@@ -39,9 +39,11 @@ input,textarea,select{font-family:inherit}
 .tabs-w{background:var(--s1);border-bottom:1px solid var(--b1);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .tabs-w::-webkit-scrollbar{display:none}
 .tabs{display:flex;padding:0}
-.tab{flex:1;padding:12px 4px 10px;font-size:12px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;user-select:none;font-family:'Noto Serif SC',serif;text-align:center}
+.tab{flex:1;padding:10px 4px 8px;font-size:12px;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;user-select:none;font-family:'Noto Serif SC',serif;text-align:center;min-width:0}
 .tab:hover{color:var(--t2)}.tab.on{color:var(--redb);border-bottom-color:var(--red)}
 .tab-d{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;display:block;margin-bottom:1px;opacity:.6}
+.tab-dt{display:block;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;opacity:.6}
+@media(max-width:480px){.tab{white-space:normal;font-size:11px;padding:8px 3px 6px;line-height:1.3}}
 .panel{display:none}.panel.on{display:block}
 
 /* DAY SUMMARY */
@@ -51,8 +53,9 @@ input,textarea,select{font-family:inherit}
 .ds-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:0 10px;align-items:end}
 .ds-grid-row1{display:contents}
 .ds-grid-row2{display:contents}
-.ds-day{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--red);align-self:start}
-.ds-route{font-family:'Noto Serif SC',serif;font-size:19px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;align-self:end}
+.ds-day{font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--red);align-self:start;white-space:nowrap}
+@media(max-width:480px){.ds-day{white-space:normal}}
+.ds-route{font-family:'Noto Serif SC',serif;font-size:19px;font-weight:700;align-self:end;word-break:keep-all;overflow-wrap:break-word}
 .ds-stat-lbl{font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;color:var(--t3);text-align:center;align-self:start}
 .ds-stat-val{font-size:18px;font-weight:700;white-space:nowrap;font-family:'Cinzel','Noto Serif SC',serif;text-align:center;align-self:end}
 .ds-stat-val.gold{color:var(--goldl)}
@@ -161,7 +164,8 @@ input,textarea,select{font-family:inherit}
 @keyframes sealRipple{0%{opacity:1;transform:scale(.3)}100%{opacity:0;transform:scale(1.8)}}
 
 /* Info line in compact card */
-.sc-info{padding:4px 12px 8px;font-size:10px;color:var(--t3);line-height:16px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px}
+.sc-info{padding:4px 12px 8px;font-size:10px;color:var(--t3);line-height:16px;display:flex;flex-wrap:nowrap;align-items:center;gap:2px 6px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;white-space:nowrap}
+.sc-info::-webkit-scrollbar{display:none}
 .sc-info .ii{color:var(--t2)}
 .sc-info .il{color:var(--t3)}
 .sc-info .sep{color:var(--b2)}
@@ -255,11 +259,11 @@ input,textarea,select{font-family:inherit}
 </div>
 
 <div class="tabs-w"><div class="tabs" id="tabs">
-  <div class="tab on" data-p="p1"><span class="tab-d">DAY 1 · 9/26</span>纪伊田边</div>
-  <div class="tab" data-p="p2"><span class="tab-d">DAY 2 · 9/27</span>蛇形地藏</div>
-  <div class="tab" data-p="p3"><span class="tab-d">DAY 3 · 9/28</span>请川-小口</div>
-  <div class="tab" data-p="p4"><span class="tab-d">DAY 4 · 9/29</span>地藏茶屋</div>
-  <div class="tab" data-p="p5"><span class="tab-d">DAY 5 · 9/30</span>高野坂</div>
+  <div class="tab on" data-p="p1"><span class="tab-d">DAY 1</span><span class="tab-dt">9/26</span>纪伊田边</div>
+  <div class="tab" data-p="p2"><span class="tab-d">DAY 2</span><span class="tab-dt">9/27</span>蛇形地藏</div>
+  <div class="tab" data-p="p3"><span class="tab-d">DAY 3</span><span class="tab-dt">9/28</span>请川-小口</div>
+  <div class="tab" data-p="p4"><span class="tab-d">DAY 4</span><span class="tab-dt">9/29</span>地藏茶屋</div>
+  <div class="tab" data-p="p5"><span class="tab-d">DAY 5</span><span class="tab-dt">9/30</span>高野坂</div>
   <div class="tab" data-p="ph"><span class="tab-d">STAY</span>酒店预订</div>
   <div class="tab" data-p="ps"><span class="tab-d">CONFIG</span>设置</div>
 </div></div>
@@ -868,7 +872,7 @@ function applySettings(){
     d.id=`p${i+1}`;regenIds(i);
     const tab=document.createElement('div');
     tab.className='tab'+(i===0?' on':'');tab.dataset.p=d.id;
-    tab.innerHTML=`<span class="tab-d">${esc(d.day)} · ${esc(d.date)}</span>${esc(d.route.split('-')[0])}`;
+    tab.innerHTML=`<span class="tab-d">${esc(d.day)}</span><span class="tab-dt">${esc(d.date)}</span>${esc(d.route.split('-')[0])}`;
     tabsEl.insertBefore(tab,hotTab);
     const panel=document.createElement('div');
     panel.className='panel'+(i===0?' on':'');panel.id=d.id;
